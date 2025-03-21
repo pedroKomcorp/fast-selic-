@@ -56,16 +56,16 @@ def safe_float(value):
     except (ValueError, AttributeError):
         return 0.0
 
-@app.get("/{valor}/{data_vencimento}")
-async def calcular_guia(valor: str, data_vencimento: str):
+@app.get("/calcular")
+async def calcular_guia(valor_guia: str, vencimento_guia: str, selic: str):
     # Convertendo o valor
-    valor = safe_float(valor)
+    valor = safe_float(valor_guia)
     if valor <= 0:
         raise HTTPException(status_code=400, detail="Valor inválido.")
     
     # Convertendo a data de vencimento (esperando ddmmyyyy)
     try:
-        vencimento = datetime.strptime(data_vencimento, "%d%m%Y").date()
+        vencimento = datetime.strptime(vencimento_guia, "%d%m%Y").date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de data inválido. Use DDMMAAAA.")
     
@@ -80,9 +80,10 @@ async def calcular_guia(valor: str, data_vencimento: str):
         multa_calculada = valor * 0.003 * dias_atraso
         multa = min(multa_calculada, valor * 0.20)
         
-        # Obtendo a taxa SELIC baseada no mês e ano do pagamento
-        mes_ano_selic = pagamento.strftime("%m%Y")
-        taxa_selic = scraper.retorna_selic(int(mes_ano_selic[2:]), int(mes_ano_selic[:2]))
+        # Obtendo a taxa SELIC baseada no parâmetro
+        mes = int(selic[:2])
+        ano = int(selic[2:])
+        taxa_selic = scraper.retorna_selic(ano, mes)
         
         juros = valor * (taxa_selic / 100)
     
@@ -98,14 +99,14 @@ async def calcular_guia(valor: str, data_vencimento: str):
         "valor_total": round(total, 2)
     }
 
-@app.get("/selic/{data}")
-def get_selic(data: str):
+@app.get("/selic")
+def get_selic(mes_ano: str):
     try:
-        if len(data) != 6 or not data.isdigit():
+        if len(mes_ano) != 6 or not mes_ano.isdigit():
             raise HTTPException(status_code=400, detail="Formato inválido. Use mmyyyy.")
         
-        mes = int(data[:2])
-        ano = int(data[2:])
+        mes = int(mes_ano[:2])
+        ano = int(mes_ano[2:])
         
         return {"taxa_selic": scraper.retorna_selic(ano, mes)}
     except ValueError:
