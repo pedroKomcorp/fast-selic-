@@ -97,3 +97,16 @@ async def calcular_guia(valor: str, data_vencimento: str):
         "juros": round(juros, 2),
         "valor_total": round(total, 2)
     }
+
+@app.get("/selic/{data}")
+def get_selic(data: str):
+    try:
+        if len(data) != 6 or not data.isdigit():
+            raise HTTPException(status_code=400, detail="Formato inválido. Use mmyyyy.")
+        
+        mes = int(data[:2])
+        ano = int(data[2:])
+        
+        return {"taxa_selic": scraper.retorna_selic(ano, mes)}
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato inválido. Use mmyyyy.")
