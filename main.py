@@ -78,7 +78,6 @@ def get_selic(mes_ano: Optional[str] = None):
                     except ValueError:
                         monthly_rates[months[i]] = None
                 formatted_data[str(year)] = {
-                    "year": year_label,
                     "monthly_rates": monthly_rates
                 }
         return {"selic_data": formatted_data}
